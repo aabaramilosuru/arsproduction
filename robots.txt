@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://arsnepal.com/sitemap.xml
+Sitemap: https://ars.qzz.io/sitemap.xml
