@@ -1,0 +1,32 @@
+{
+  "name": "Aaba Ramilo Suru",
+  "short_name": "ARS Nepal",
+  "description": "Nepal's own short-form video platform. Built by Roshan Shrestha for Nepali creators.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#dc2626",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/splash.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/splash.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["social", "entertainment", "video"],
+  "lang": "en"
+}

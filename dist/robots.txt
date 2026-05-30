@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ars.qzz.io/sitemap.xml
