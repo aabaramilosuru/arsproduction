@@ -1,2 +1,11 @@
-# Cloudflare Pages configuration
+name = "ars-nepal"
+compatibility_date = "2024-01-01"
+
+# Serve the built dist as static assets
+[assets]
+directory = "./dist"
+browser_TTL = "86400"
+serve_single_page_app = true
+
+# Cloudflare Pages config
 pages_build_output_dir = "dist"
