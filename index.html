@@ -267,97 +267,10 @@
     }
     </script>
 
-    <style>
-      /* ═══ Preload / splash screen styles ═══ */
-      #splash-screen {
-        position: fixed;
-        inset: 0;
-        z-index: 99999;
-        background: #0a0a0f;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        transition: opacity 0.8s ease, transform 0.8s ease;
-        font-family: 'Space Grotesk', sans-serif;
-      }
-      #splash-screen.hide {
-        opacity: 0;
-        transform: scale(1.05);
-        pointer-events: none;
-      }
-      #splash-screen .logo {
-        width: 80px;
-        height: 80px;
-        border-radius: 24px;
-        animation: splashPulse 2s ease-in-out infinite;
-      }
-      #splash-screen .brand-name {
-        margin-top: 20px;
-        font-size: 1.5rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #ff3d3d 0%, #ff6b35 30%, #ffd700 60%, #ff3d3d 100%);
-        background-size: 200% auto;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        animation: splashShimmer 3s linear infinite;
-      }
-      #splash-screen .loader {
-        margin-top: 24px;
-        width: 120px;
-        height: 2px;
-        background: rgba(255,255,255,0.05);
-        border-radius: 2px;
-        overflow: hidden;
-      }
-      #splash-screen .loader-bar {
-        height: 100%;
-        width: 0%;
-        background: linear-gradient(90deg, #dc2626, #f97316);
-        border-radius: 2px;
-        animation: splashLoad 1.8s ease-in-out forwards;
-      }
-      @keyframes splashPulse {
-        0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(220,38,38,0.3); }
-        50% { transform: scale(1.05); box-shadow: 0 0 60px rgba(220,38,38,0.5); }
-      }
-      @keyframes splashShimmer {
-        0% { background-position: 0% center; }
-        100% { background-position: 200% center; }
-      }
-      @keyframes splashLoad {
-        0% { width: 0%; }
-        50% { width: 70%; }
-        100% { width: 100%; }
-      }
-    </style>
+
   </head>
   <body>
-    <!-- Splash / Preloader Screen -->
-    <div id="splash-screen">
-      <img src="/splash.png" alt="ARS Nepal" class="logo" />
-      <div class="brand-name">Aaba Ramilo Suru</div>
-      <div class="loader">
-        <div class="loader-bar"></div>
-      </div>
-      <p style="margin-top:12px;font-size:0.7rem;color:rgba(255,255,255,0.2);letter-spacing:0.15em;text-transform:uppercase;font-weight:500;">Made in Nepal 🇳🇵</p>
-    </div>
-
-    <script>
-      // Hide splash screen after load
-      window.addEventListener('load', () => {
-        setTimeout(() => {
-          document.getElementById('splash-screen').classList.add('hide');
-          setTimeout(() => {
-            const el = document.getElementById('splash-screen');
-            if (el) el.style.display = 'none';
-          }, 800);
-        }, 1500);
-      });
-    </script>
-
-    <!-- Noscript fallback for SEO crawlers without JS -->
+<!-- Noscript fallback for SEO crawlers without JS -->
     <noscript>
       <div style="font-family:sans-serif;max-width:800px;margin:40px auto;padding:20px;color:#333">
         <h1>Aaba Ramilo Suru — Nepal's Own Short Video Platform</h1>
