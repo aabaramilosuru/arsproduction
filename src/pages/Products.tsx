@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Zap, CheckCircle2, Clock, Rocket, Star, ArrowRight } from 'lucide-react';
 import DaysCounter from '../components/DaysCounter';
+import { injectJsonLd, removeJsonLd } from '../utils/seo';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Product {
@@ -343,6 +344,55 @@ export default function Products() {
     );
     const canonical = document.querySelector('link[rel="canonical"]');
     if (canonical) canonical.setAttribute('href', 'https://ars.qzz.io/products');
+
+    // ── Dynamic JSON-LD Schemas ──
+
+    // BreadcrumbList
+    injectJsonLd('seo-breadcrumb', {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'ARS Nepal Home', item: 'https://ars.qzz.io/' },
+        { '@type': 'ListItem', position: 2, name: 'ARS Products', item: 'https://ars.qzz.io/products' }
+      ]
+    });
+
+    // WebPage
+    injectJsonLd('seo-webpage', {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'ARS Nepal Products — Aaba Ramilo Suru Suite',
+      description: 'Explore the complete ARS product ecosystem built by Roshan Shrestha for Nepali creators. ARS Video App, Live Streaming, Coins, Sounds, Creator Studio & SafeSpace.',
+      url: 'https://ars.qzz.io/products',
+      inLanguage: 'en',
+      isPartOf: { '@type': 'WebSite', name: 'Aaba Ramilo Suru', url: 'https://ars.qzz.io' }
+    });
+
+    // ItemList — All Products
+    injectJsonLd('seo-itemlist', {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: 'ARS Nepal Product Suite',
+      description: 'Complete list of products built by Roshan Shrestha under Aaba Ramilo Suru',
+      numberOfItems: products.length,
+      itemListElement: products.map((p, idx) => ({
+        '@type': 'ListItem',
+        position: idx + 1,
+        item: {
+          '@type': 'SoftwareApplication',
+          name: p.name,
+          description: p.description,
+          applicationCategory: 'SocialNetworkingApplication',
+          operatingSystem: 'Android, iOS',
+          url: `https://ars.qzz.io/products#${p.id}`,
+          author: { '@type': 'Person', name: 'Roshan Shrestha' },
+          offers: { '@type': 'Offer', price: '0', priceCurrency: 'NPR' },
+          ...(p.status === 'building' && { releaseNotes: 'Currently building' })
+        }
+      }))
+    });
+
+    return () => removeJsonLd();
   }, []);
 
   // Scroll reveal

@@ -68,6 +68,10 @@
     <!-- Canonical URL -->
     <link rel="canonical" href="https://ars.qzz.io/" />
 
+    <!-- hreflang — Language/Region targeting -->
+    <link rel="alternate" hreflang="en" href="https://ars.qzz.io/" />
+    <link rel="alternate" hreflang="x-default" href="https://ars.qzz.io/" />
+
     <!-- DNS Prefetch & Preconnect -->
     <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
     <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
@@ -139,26 +143,35 @@
     }
     </script>
 
-    <!-- Person Schema — Roshan Shrestha -->
+    <!-- Person Schema — Roshan Shrestha (Enhanced E-E-A-T signal) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Person",
       "name": "Roshan Shrestha",
-      "additionalName": ["Roshan", "roshan ars", "aabaramilosuru developer"],
+      "additionalName": ["Roshan", "roshan ars", "aabaramilosuru developer", "Roshan Shrestha ARS Nepal", "roshan shrestha nepal developer"],
       "jobTitle": "Developer & Founder",
-      "description": "17-year-old self-taught Nepali student developer and founder of Aaba Ramilo Suru (ARS Nepal), building Nepal's own short-form video social media platform.",
-      "nationality": "Nepali",
+      "description": "17-year-old self-taught Nepali student developer and founder of Aaba Ramilo Suru (ARS Nepal), building Nepal's own short-form video social media platform from scratch.",
+      "nationality": {
+        "@type": "Country",
+        "name": "Nepal"
+      },
       "url": "https://ars.qzz.io/#about",
       "worksFor": {
         "@type": "Organization",
-        "name": "Aaba Ramilo Suru"
+        "name": "Aaba Ramilo Suru",
+        "url": "https://ars.qzz.io"
       },
-      "knowsAbout": ["Web Development", "Mobile App Development", "Social Media Platform", "Nepal Technology", "React", "Node.js", "Flutter", "Python"],
+      "knowsAbout": ["Web Development", "Mobile App Development", "Social Media Platform", "Nepal Technology", "React", "Node.js", "Flutter", "Python", "Cloudflare", "Supabase", "PostgreSQL", "Video Streaming", "HLS", "R2 Storage"],
       "birthPlace": {
         "@type": "Place",
         "name": "Nepal"
-      }
+      },
+      "sameAs": [
+        "https://www.tiktok.com/@aabaramilosuru",
+        "https://www.instagram.com/aabaramilosuru",
+        "https://youtube.com/@aabaramilosuru"
+      ]
     }
     </script>
 
@@ -184,6 +197,45 @@
       },
       "inLanguage": "ne",
       "countryOfOrigin": "NP"
+    }
+    </script>
+
+    <!-- VideoObject Schema — Short video platform app preview -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoObject",
+      "name": "Aaba Ramilo Suru — Nepal's Own Short Video Platform",
+      "description": "ARS Nepal (Aaba Ramilo Suru) is Nepal's own short-form video social media platform built by Roshan Shrestha. Create, share, go live, and earn rewards.",
+      "thumbnailUrl": "https://ars.qzz.io/splash.png",
+      "uploadDate": "2026-05-23",
+      "author": {
+        "@type": "Person",
+        "name": "Roshan Shrestha"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Aaba Ramilo Suru"
+      },
+      "inLanguage": "en",
+      "countryOfOrigin": "NP"
+    }
+    </script>
+
+    <!-- SiteNavigationElement Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SiteNavigationElement",
+      "name": "Main Navigation",
+      "url": "https://ars.qzz.io",
+      "hasPart": [
+        { "@type": "SiteNavigationElement", "name": "Home", "url": "https://ars.qzz.io/" },
+        { "@type": "SiteNavigationElement", "name": "Products", "url": "https://ars.qzz.io/products" },
+        { "@type": "SiteNavigationElement", "name": "About Developer", "url": "https://ars.qzz.io/#about" },
+        { "@type": "SiteNavigationElement", "name": "Features", "url": "https://ars.qzz.io/#features" },
+        { "@type": "SiteNavigationElement", "name": "Join Waitlist", "url": "https://ars.qzz.io/#join" }
+      ]
     }
     </script>
 
@@ -227,18 +279,42 @@
         },
         {
           "@type": "Question",
-          "name": "What features does Aaba Ramilo Suru have?",
+          "name": "Who is the developer of Aaba Ramilo Suru?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Aaba Ramilo Suru features short videos (15s–60s), live streaming, virtual gifts, creator monetization with Nepali rupee payouts via eSewa and Khalti, Nepali music library, Devanagari text overlays, and content moderation tailored for Nepal."
+            "text": "Roshan Shrestha is the sole developer and founder of Aaba Ramilo Suru (ARS Nepal). He is a 17-year-old self-taught student developer from Nepal who built the entire platform — backend, mobile app, admin panel, and website — by himself."
           }
         },
         {
           "@type": "Question",
-          "name": "Who built Aaba Ramilo Suru?",
+          "name": "Where can I find Aaba Ramilo Suru online?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Aaba Ramilo Suru was built entirely by Roshan Shrestha, a 17-year-old self-taught student developer from Nepal. He is the founder, developer, and creator of ARS Nepal."
+            "text": "Aaba Ramilo Suru (ARS Nepal) is online at arsnepal.com / ars.qzz.io. You can also follow @aabaramilosuru on TikTok, Instagram, and YouTube for updates about the platform's development and launch."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is ARS Nepal better than TikTok for Nepali creators?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "ARS Nepal is designed specifically for the Nepali community with localized features, Nepali music library, Devanagari text overlays, creator monetization in Nepali rupees, and content moderation tailored for Nepal's cultural context — making it the best short-video platform for Nepali creators."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What technology does ARS Nepal use?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "ARS Nepal is built with Flutter (mobile app), Python Flask (backend API), Supabase PostgreSQL (database), Cloudflare R2 (video storage), HLS streaming for video, Chromaprint for audio fingerprinting, and React/Vite for the production website — all developed by Roshan Shrestha."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the ARS Nepal waitlist?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The ARS Nepal waitlist is the first step to become a creator on Nepal's own short-video platform. Join at arsnepal.com to get early access when Aaba Ramilo Suru launches. Early creators get special perks and visibility."
           }
         }
       ]
@@ -254,22 +330,16 @@
         {
           "@type": "ListItem",
           "position": 1,
-          "name": "Home",
+          "name": "Aaba Ramilo Suru — ARS Nepal",
           "item": "https://ars.qzz.io/"
-        },
-        {
-          "@type": "ListItem",
-          "position": 2,
-          "name": "Products",
-          "item": "https://ars.qzz.io/products"
         }
       ]
     }
     </script>
 
 
-    <script type="module" crossorigin src="/assets/index-ORVLtLs9.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index--qhFmm8A.css">
+    <script type="module" crossorigin src="/assets/index-B86Wm1sS.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Bdb6j9bJ.css">
   </head>
   <body>
 <!-- Noscript fallback for SEO crawlers without JS -->

@@ -5,6 +5,7 @@ import {
   Play, Shield, Music, Globe, Heart, DollarSign
 } from 'lucide-react';
 import DaysCounter from '../components/DaysCounter';
+import { injectJsonLd, removeJsonLd } from '../utils/seo';
 
 // ─── Canvas Particle System ──────────────────────────────────────────────────
 function CanvasParticles() {
@@ -567,6 +568,22 @@ export default function Home() {
     );
     const canonical = document.querySelector('link[rel="canonical"]');
     if (canonical) canonical.setAttribute('href', 'https://ars.qzz.io/');
+
+    // ── Dynamic JSON-LD Schemas (page-specific only; global schemas in index.html) ──
+
+    // WebPage
+    injectJsonLd('seo-webpage', {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'Aaba Ramilo Suru — ARS Nepal Home',
+      description: 'Nepal\'s own short-form video social media platform built by Roshan Shrestha. Create, share, go live, and earn rewards.',
+      url: 'https://ars.qzz.io/',
+      inLanguage: 'en',
+      isPartOf: { '@type': 'WebSite', name: 'Aaba Ramilo Suru', url: 'https://ars.qzz.io' },
+      about: { '@type': 'Organization', name: 'Aaba Ramilo Suru', url: 'https://ars.qzz.io' }
+    });
+
+    return () => removeJsonLd();
   }, []);
 
   // Typing effect

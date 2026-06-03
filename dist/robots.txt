@@ -1,4 +1,27 @@
 User-agent: *
 Allow: /
+Crawl-delay: 2
 
+# ── Sitemaps ──
 Sitemap: https://ars.qzz.io/sitemap.xml
+
+# ── Disallow non-public paths ──
+Disallow: /api/
+Disallow: /admin/
+Disallow: /cdn-cgi/
+
+# ── Specific bots ──
+User-agent: GPTBot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Googlebot-Image
+Allow: /
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 3
