@@ -46,8 +46,8 @@ export default function Navbar() {
           className="h-full transition-all duration-200 ease-out"
           style={{
             width: `${scrollProgress}%`,
-            background: 'linear-gradient(90deg, #dc2626, #f97316, #fbbf24)',
-            boxShadow: '0 0 10px rgba(220, 38, 38, 0.5)',
+            background: 'linear-gradient(90deg, #e63946, #f0a635)',
+            boxShadow: '0 0 10px rgba(230, 57, 70, 0.5)',
           }}
         />
       </div>
@@ -59,11 +59,12 @@ export default function Navbar() {
             <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <img src="/splash.png" alt="ARS Logo" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
             </div>
-            <div>
-              <span className="text-lg sm:text-xl font-bold tracking-tight gradient-text" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg sm:text-xl font-display font-medium tracking-tight text-cream">
                 <span className="hidden sm:inline">Aaba Ramilo Suru</span>
                 <span className="sm:hidden">ARS</span>
               </span>
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-crimson" />
             </div>
           </Link>
 
@@ -73,10 +74,10 @@ export default function Navbar() {
               <Link
                 key={link.label}
                 to={link.path}
-                className={`text-sm font-medium transition-all duration-200 hover:text-red-400 relative after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:rounded-full after:transition-all after:duration-300 ${
+                className={`text-sm font-medium transition-all duration-200 hover:text-crimson relative after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:rounded-full after:transition-all after:duration-300 ${
                   location.pathname === link.path
-                    ? 'text-red-400 after:bg-red-400 after:w-full'
-                    : 'text-white/70 hover:text-white after:w-0 after:bg-red-400/50 hover:after:w-full'
+                    ? 'text-crimson after:bg-crimson after:w-full'
+                    : 'text-stone hover:text-cream after:w-0 after:bg-crimson/50 hover:after:w-full'
                 }`}
               >
                 {link.label}
@@ -131,8 +132,8 @@ export default function Navbar() {
               to={link.path}
               className={`block px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                 location.pathname === link.path
-                  ? 'bg-red-600/20 text-red-400'
-                  : 'text-white/70 hover:text-white hover:bg-white/5'
+                  ? 'bg-crimson/20 text-crimson'
+                  : 'text-stone hover:text-cream hover:bg-white/5'
               }`}
             >
               {link.label}

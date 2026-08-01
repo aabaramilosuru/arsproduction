@@ -1,466 +1,440 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Zap, ChevronRight, Star, TrendingUp, Users, ArrowRight, Sparkles,
-  Play, Shield, Music, Globe, Heart, DollarSign
+  ArrowRight, ArrowUpRight, Coins, Gauge, Heart, MessageCircle, Music,
+  Play, Radio, Share2, Shield,
 } from 'lucide-react';
 import DaysCounter from '../components/DaysCounter';
 import { injectJsonLd, removeJsonLd } from '../utils/seo';
 
-// ─── Canvas Particle System ──────────────────────────────────────────────────
-function CanvasParticles() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let animationId: number;
-    let mouseX = 0;
-    let mouseY = 0;
-    let particles: Array<{
-      x: number; y: number; vx: number; vy: number;
-      size: number; alpha: number; life: number; maxLife: number;
-      color: string;
-    }> = [];
-
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resize();
-    window.addEventListener('resize', resize);
-
-    canvas.addEventListener('mousemove', (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-    });
-
-    const spawnParticle = () => {
-      if (particles.length > 100) return;
-      const colors = ['#dc2626', '#f97316', '#fbbf24', '#ef4444', '#fb923c'];
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: canvas.height + 10,
-        vx: (Math.random() - 0.5) * 0.6,
-        vy: -(Math.random() * 0.8 + 0.3),
-        size: Math.random() * 3 + 1,
-        alpha: Math.random() * 0.6 + 0.2,
-        life: 0,
-        maxLife: Math.random() * 200 + 150,
-        color: colors[Math.floor(Math.random() * colors.length)],
-      });
-    };
-
-    // Spawn initial particles
-    for (let i = 0; i < 60; i++) {
-      const colors = ['#dc2626', '#f97316', '#fbbf24', '#ef4444', '#fb923c'];
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: -(Math.random() * 0.3 + 0.1),
-        size: Math.random() * 2.5 + 0.5,
-        alpha: Math.random() * 0.4 + 0.1,
-        life: 0,
-        maxLife: Math.random() * 300 + 200,
-        color: colors[Math.floor(Math.random() * colors.length)],
-      });
-    }
-
-    let frameCount = 0;
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      frameCount++;
-
-      // Spawn new particles
-      if (frameCount % 4 === 0) spawnParticle();
-
-      // Draw mouse glow
-      const gradient = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 250);
-      gradient.addColorStop(0, 'rgba(220, 38, 38, 0.08)');
-      gradient.addColorStop(0.3, 'rgba(249, 115, 22, 0.04)');
-      gradient.addColorStop(0.6, 'rgba(59, 130, 246, 0.02)');
-      gradient.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Update & draw particles
-      particles = particles.filter(p => p.life < p.maxLife);
-      particles.forEach(p => {
-        p.life++;
-        p.x += p.vx;
-        p.y += p.vy;
-
-        // Mouse interaction
-        const dx = mouseX - p.x;
-        const dy = mouseY - p.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 150) {
-          const force = (150 - dist) / 150 * 0.5;
-          p.x -= dx / dist * force;
-          p.y -= dy / dist * force;
-        }
-
-        const fadeIn = Math.min(1, p.life / 30);
-        const fadeOut = Math.max(0, 1 - (p.life - p.maxLife + 40) / 40);
-        const alpha = p.alpha * fadeIn * fadeOut;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = alpha;
-        ctx.fill();
-
-        // Glow
-        if (p.size > 1.5) {
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
-          ctx.fillStyle = p.color;
-          ctx.globalAlpha = alpha * 0.15;
-          ctx.fill();
-        }
-      });
-      ctx.globalAlpha = 1;
-
-      animationId = requestAnimationFrame(animate);
-    };
-    animate();
-
-    return () => {
-      cancelAnimationFrame(animationId);
-      window.removeEventListener('resize', resize);
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 pointer-events-none"
-      style={{ zIndex: 1 }}
-    />
-  );
-}
-
-// ─── Starfield Background ──────────────────────────────────────────────────
-function StarfieldBackground() {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const stars = 200;
-    const meteorCount = 3;
-
-    // Create stars
-    for (let i = 0; i < stars; i++) {
-      const star = document.createElement('div');
-      star.className = 'star';
-      const size = Math.random() * 2.5 + 0.5;
-      const isBright = Math.random() > 0.85;
-      const isDim = Math.random() < 0.3;
-      star.style.cssText = `
-        width: ${size}px;
-        height: ${size}px;
-        left: ${Math.random() * 100}%;
-        top: ${Math.random() * 100}%;
-        --duration: ${Math.random() * 4 + 2}s;
-        --delay: ${Math.random() * 5}s;
-      `;
-      if (isBright) star.classList.add('bright');
-      if (isDim) star.classList.add('dim');
-      container.appendChild(star);
-    }
-
-    // Create meteors
-    for (let i = 0; i < meteorCount; i++) {
-      const meteor = document.createElement('div');
-      meteor.className = 'meteor';
-      meteor.style.cssText = `
-        left: ${Math.random() * 100}%;
-        top: ${Math.random() * 30}%;
-        --duration: ${Math.random() * 2 + 1.5}s;
-        --delay: ${Math.random() * 10 + 5}s;
-      `;
-      container.appendChild(meteor);
-    }
-
-    return () => {
-      container.innerHTML = '';
-    };
-  }, []);
-
-  return <div ref={containerRef} className="starfield" />;
-}
-
-// ─── Cursor Sparkle Effect ──────────────────────────────────────────────────
-function CursorSparkles() {
-  const glowRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let sparkles: HTMLDivElement[] = [];
-    let frameId: number;
-    let lastTime = 0;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      // Move glow
-      if (glowRef.current) {
-        glowRef.current.style.left = `${e.clientX}px`;
-        glowRef.current.style.top = `${e.clientY}px`;
-        glowRef.current.style.width = `${150 + Math.sin(Date.now() / 1000) * 50}px`;
-        glowRef.current.style.height = glowRef.current.style.width;
-      }
-    };
-
-    const handleClick = (e: MouseEvent) => {
-      // Burst sparkles on click
-      for (let i = 0; i < 12; i++) {
-        const sparkle = document.createElement('div');
-        const size = Math.random() * 6 + 3;
-        const colors = ['#dc2626', '#f97316', '#fbbf24', '#ef4444', '#ffffff'];
-        const color = colors[Math.floor(Math.random() * colors.length)];
-        const angle = (Math.PI * 2 * i) / 12 + (Math.random() - 0.5) * 0.5;
-        const dist = Math.random() * 30 + 10;
-        sparkle.style.cssText = `
-          position: fixed;
-          pointer-events: none;
-          z-index: 9999;
-          width: ${size}px;
-          height: ${size}px;
-          border-radius: 50%;
-          background: ${color};
-          left: ${e.clientX}px;
-          top: ${e.clientY}px;
-          box-shadow: 0 0 ${size * 2}px ${color};
-          --tx: ${Math.cos(angle) * dist}px;
-          --ty: ${Math.sin(angle) * dist}px;
-          animation: clickSparkle 0.6s ease-out forwards;
-        `;
-        document.body.appendChild(sparkle);
-        sparkles.push(sparkle);
-        setTimeout(() => {
-          if (sparkle.parentElement) sparkle.remove();
-          sparkles = sparkles.filter(s => s !== sparkle);
-        }, 600);
-      }
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('click', handleClick);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('click', handleClick);
-      cancelAnimationFrame(frameId);
-      sparkles.forEach(s => s.remove());
-    };
-  }, []);
-
-  return <div ref={glowRef} className="cursor-glow" />;
-}
-
-// ─── Mouse Parallax Hook ─────────────────────────────────────────────────────
-function useMouseParallax(factor = 20) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const handleMouse = (e: MouseEvent) => {
-      if (!ref.current) return;
-      const rect = ref.current.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const x = (e.clientX - centerX) / factor;
-      const y = (e.clientY - centerY) / factor;
-      setOffset({ x, y });
-    };
-    window.addEventListener('mousemove', handleMouse);
-    return () => window.removeEventListener('mousemove', handleMouse);
-  }, [factor]);
-
-  return { ref, offset };
-}
-
-// ─── 3D Tilt Card Hook ───────────────────────────────────────────────────────
-function useTiltCard() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [rotate, setRotate] = useState({ x: 0, y: 0 });
-
-  const handleMouse = useCallback((e: React.MouseEvent) => {
-    if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    setRotate({ x: -y * 12, y: x * 12 });
-  }, []);
-
-  const handleLeave = useCallback(() => setRotate({ x: 0, y: 0 }), []);
-
-  return { ref, rotate, handleMouse, handleLeave };
-}
-
-// ─── TiltCard Component ──────────────────────────────────────────────────────
-function TiltCard({
-  children,
-  className = '',
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  const { ref, rotate, handleMouse, handleLeave } = useTiltCard();
-
-  return (
-    <div className="card-3d" ref={ref}>
-      <div
-        className={`card-3d-inner ${className}`}
-        onMouseMove={handleMouse}
-        onMouseLeave={handleLeave}
-        style={{
-          transform: `perspective(800px) rotateX(${rotate.x}deg) rotateY(${rotate.y}deg)`,
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
-// ─── Animated Background ─────────────────────────────────────────────────────
-function HeroBackground() {
+/* ═══════════════════════════════════════════════════════════════════
+   HERO BACKDROP — quiet layers + one Devanagari watermark
+═══════════════════════════════════════════════════════════════════ */
+function HeroBackdrop() {
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Starfield night sky */}
-      <div className="absolute inset-0">
-        <StarfieldBackground />
-      </div>
-      {/* Gradient mesh */}
-      <div className="absolute inset-0 mesh-gradient-shift" />
-      {/* Grid */}
-      <div className="absolute inset-0 bg-grid opacity-30" />
-      {/* Gradient overlays - deep dark edges */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f] via-transparent to-[#0a0a0f]" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0f] via-transparent to-[#0a0a0f]" />
-      {/* Additional atmospheric glow at bottom */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-t from-red-600/5 to-transparent blur-3xl" />
-      {/* Canvas particles */}
-      <CanvasParticles />
+      <div className="hero-bg" />
+      <div className="bg-grid-fine absolute inset-0" />
+      <div className="hero-watermark" aria-hidden="true">LET’S START</div>
+      <div className="hero-glow-dot -bottom-40 -right-24 h-[440px] w-[440px] bg-crimson/15" />
+      <div className="hero-glow-dot -top-24 -left-32 h-[380px] w-[380px] bg-royal/10" />
+      <div className="grain" />
     </div>
   );
 }
 
-// ─── Feature Card ────────────────────────────────────────────────────────────
-interface FeatureCardProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  gradient: string;
-  delay?: number;
+/* ═══════════════════════════════════════════════════════════════════
+   TICKER — broadcast marquee band
+═══════════════════════════════════════════════════════════════════ */
+const TICK = [
+  'Now it begins',
+  'Aaba Ramilo Suru',
+  'Let’s start now',
+  'Nepal’s own platform',
+  'Built in public',
+  'Made in Nepal',
+];
+
+function Ticker() {
+  return (
+    <div className="ticker-band">
+      <div className="ticker-track">
+        {[...TICK, ...TICK].map((t, i) => (
+          <span key={i} className="ticker-item">
+            <span className="tick-dot" />
+            {t}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
 }
 
-function FeatureCard({ icon, title, description, gradient, delay = 0 }: FeatureCardProps) {
+/* ═══════════════════════════════════════════════════════════════════
+   FEED PANEL — the signature: a live, auto-playing video feed
+═══════════════════════════════════════════════════════════════════ */
+const FEED = [
+  {
+    bg: 'linear-gradient(135deg, #7f1d1d, #3f0d0d)',
+    emoji: '🏔️',
+    name: 'Roshan',
+    handle: '@roshan.builds',
+    caption: 'Coding Nepal’s platform from my room. Day by day — still going.',
+    tag: '#buildinpublic',
+    likes: 128_400, comments: 3_421, shares: 8_910,
+  },
+  {
+    bg: 'linear-gradient(135deg, #1e3a8a, #12234e)',
+    emoji: '🎵',
+    name: 'Nepali Beats',
+    handle: '@nepalisounds',
+    caption: 'New hit just dropped — listen up!',
+    tag: '#newmusic',
+    likes: 98_900, comments: 2_210, shares: 6_540,
+  },
+  {
+    bg: 'linear-gradient(135deg, #78350f, #431407)',
+    emoji: '🍜',
+    name: 'Kathmandu Kitchen',
+    handle: '@ktm.foodies',
+    caption: '2am momo cravings hit different. 🔥',
+    tag: '#nepalifood',
+    likes: 210_300, comments: 5_120, shares: 14_800,
+  },
+  {
+    bg: 'linear-gradient(135deg, #581c87, #2e1065)',
+    emoji: '💃',
+    name: 'Nepal Dance',
+    handle: '@dancenepal',
+    caption: 'Rukmini challenge — you try it too!',
+    tag: '#dancechallenge',
+    likes: 76_200, comments: 1_890, shares: 4_220,
+  },
+];
+
+function fmt(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
+  return String(n);
+}
+
+function FeedPanel() {
+  const [idx, setIdx] = useState(0);
+  const [liked, setLiked] = useState(false);
+  const [bump, setBump] = useState(0);
+  const v = FEED[idx];
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setIdx((i) => (i + 1) % FEED.length);
+      setLiked(false);
+      setBump((b) => b + 137);
+    }, 5000);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div className="feed-wrap">
+      {/* ── frame ── */}
+      <div className="feed-frame">
+        <div key={idx} className="feed-video" style={{ background: v.bg }}>
+          <span className="text-[4.5rem] opacity-90 drop-shadow-lg">{v.emoji}</span>
+        </div>
+
+        {/* progress segments */}
+        <div className="feed-progress" aria-hidden="true">
+          {FEED.map((_, i) => (
+            <div key={i} className={`seg ${i < idx ? 'done' : ''} ${i === idx ? 'cur' : ''}`}>
+              <span />
+            </div>
+          ))}
+        </div>
+
+        <span className="feed-live"><span className="dot" /> Live</span>
+        <span className="feed-top">FOLLOWING</span>
+
+        {/* engagement rail */}
+        <div className="feed-rail">
+          <button
+            type="button"
+            className={`feed-act ${liked ? 'liked' : ''}`}
+            onClick={() => {
+              setLiked((l) => !l);
+              setBump((b) => b + (liked ? -1 : 1));
+            }}
+            aria-label={liked ? 'Unlike' : 'Like'}
+          >
+            <span className="circle">
+              <Heart className="h-4 w-4" fill={liked ? 'currentColor' : 'none'} />
+            </span>
+            <b>{fmt(v.likes + bump)}</b>
+          </button>
+          <div className="feed-act">
+            <span className="circle"><MessageCircle className="h-4 w-4" /></span>
+            <b>{fmt(v.comments)}</b>
+          </div>
+          <div className="feed-act">
+            <span className="circle"><Share2 className="h-4 w-4" /></span>
+            <b>{fmt(v.shares)}</b>
+          </div>
+          <div className="feed-disc" aria-hidden="true" />
+        </div>
+
+        {/* caption */}
+        <div className="feed-meta">
+          <p className="feed-handle">
+            <span className="text-crimson">@</span>{v.handle}
+            <span className="text-[0.7rem] text-stone"> · {v.name}</span>
+          </p>
+          <p className="feed-caption mt-1">
+            {v.caption} <span className="text-marigold">{v.tag}</span>
+          </p>
+        </div>
+      </div>
+
+      {/* ── floating chips ── */}
+      <div className="feed-chip float" style={{ top: '-1.1rem', right: '-0.9rem' }}>
+        <span className="text-marigold">🪙</span>
+        <b>+1,240 coins</b>
+      </div>
+      <div className="feed-chip float-delayed" style={{ bottom: '30%', left: '-1rem' }}>
+        <span className="h-1.5 w-1.5 rounded-full bg-crimson animate-pulse" />
+        <b>2,301 watching</b>
+      </div>
+      <div className="feed-chip float-fast" style={{ bottom: '-1rem', right: '1.6rem' }}>
+        <Heart className="h-3.5 w-3.5 text-crimson" fill="currentColor" />
+        <b>You &amp; 12.4k others</b>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SECTION HEADER
+═══════════════════════════════════════════════════════════════════ */
+function SectionHeader({
+  badge, title, subtitle,
+}: {
+  badge: string;
+  title: React.ReactNode;
+  subtitle?: string;
+}) {
+  return (
+    <div className="max-w-2xl">
+      <p className="section-eyebrow reveal">{badge}</p>
+      <h2 className="section-title reveal" style={{ transitionDelay: '80ms' }}>{title}</h2>
+      {subtitle && (
+        <p className="reveal mt-4 text-base leading-relaxed text-stone" style={{ transitionDelay: '160ms' }}>
+          {subtitle}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FEATURES
+═══════════════════════════════════════════════════════════════════ */
+const FEATURES = [
+  {
+    tag: 'Shorts',
+    icon: <Play className="h-5 w-5 text-crimson" />,
+    title: '15 seconds to say it all.',
+    desc: 'Short video with Nepali filters, trending sounds and Devanagari captions — built for how Nepal actually creates.',
+  },
+  {
+    tag: 'Live',
+    icon: <Radio className="h-5 w-5 text-crimson" />,
+    title: 'The whole country, live.',
+    desc: 'Go live in a tap, take gifts, and grow a real audience in real time — a gift economy made for Nepal.',
+  },
+  {
+    tag: 'Coins',
+    icon: <Coins className="h-5 w-5 text-marigold" />,
+    title: 'Content that pays.',
+    desc: 'Gifts become coins, coins become Nepali rupees — straight to eSewa, Khalti or your bank.',
+  },
+  {
+    tag: 'Sounds',
+    icon: <Music className="h-5 w-5 text-crimson" />,
+    title: 'Every Nepali sound.',
+    desc: 'Folk to fresh — a music library that actually knows Nepali ears, trends and festivals.',
+  },
+  {
+    tag: 'Safety',
+    icon: <Shield className="h-5 w-5 text-cream" />,
+    title: 'Safe by design.',
+    desc: 'Moderation and reporting tuned to Nepali culture and community — not a one-size transplant.',
+  },
+  {
+    tag: 'Speed',
+    icon: <Gauge className="h-5 w-5 text-marigold" />,
+    title: 'Built for Nepal’s internet.',
+    desc: 'Light, fast and offline-friendly — so it works on 3G in the hills, not just fiber in Kathmandu.',
+  },
+];
+
+function FeatureCard({
+  tag, icon, title, desc, i,
+}: {
+  tag: string;
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  i: number;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
-      { threshold: 0.1 }
+    const o = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) setVisible(true); },
+      { threshold: 0.15 },
     );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
+    if (ref.current) o.observe(ref.current);
+    return () => o.disconnect();
   }, []);
-
-  const { rotate, handleMouse, handleLeave } = useTiltCard();
 
   return (
     <div
       ref={ref}
-      className="card-3d"
+      className="feature-card"
       style={{
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(40px)',
-        transition: `all 0.7s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
+        transform: visible ? 'none' : 'translateY(26px)',
+        transition: `opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1) ${i * 70}ms, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) ${i * 70}ms, border-color 0.4s ease`,
       }}
     >
-      <div
-        className="card-3d-inner feature-card rounded-2xl p-6 sm:p-7 h-full cursor-default relative overflow-hidden group"
-        onMouseMove={handleMouse}
-        onMouseLeave={handleLeave}
-        style={{
-          transform: visible
-            ? `perspective(800px) rotateX(${rotate.x}deg) rotateY(${rotate.y}deg)`
-            : 'perspective(800px) rotateX(10deg) rotateY(0deg)',
-        }}
-      >
-        {/* Hover glow */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-red-600/0 via-red-600/0 to-orange-500/0 group-hover:from-red-600/10 group-hover:via-red-600/5 group-hover:to-orange-500/10 blur-2xl transition-all duration-700 rounded-3xl opacity-0 group-hover:opacity-100" />
-
-        <div className="relative z-10">
-          <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mb-4 sm:mb-5 ${gradient} shadow-lg`}>
-            {icon}
-          </div>
-          <h3
-            className="text-white font-bold text-lg sm:text-xl mb-2"
-            style={{ fontFamily: 'Space Grotesk, sans-serif' }}
-          >
-            {title}
-          </h3>
-          <p className="text-white/50 text-sm leading-relaxed">{description}</p>
-        </div>
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-[0.62rem] uppercase tracking-[0.22em] text-crimson">{tag}</span>
+        {icon}
       </div>
+      <h3 className="mt-6 font-display text-xl font-medium text-cream">{title}</h3>
+      <p className="mt-2 text-sm leading-relaxed text-stone">{desc}</p>
+      <div className="feature-underline mt-6" />
     </div>
   );
 }
 
-// ─── Stats Card ──────────────────────────────────────────────────────────────
-function StatCard({ value, label, icon, delay = 0 }: {
-  value: string; label: string; icon: React.ReactNode; delay?: number;
+/* ═══════════════════════════════════════════════════════════════════
+   LAUNCH BOARD
+═══════════════════════════════════════════════════════════════════ */
+const PHASES = [
+  {
+    phase: 'Phase 01', name: 'Foundation', done: true,
+    detail: 'Backend, auth, storage — 170+ API endpoints live.', pct: 100,
+  },
+  {
+    phase: 'Phase 02', name: 'Core app', done: false,
+    detail: 'Short video with a full HLS pipeline — upload to play.', pct: 75,
+  },
+  {
+    phase: 'Phase 03', name: 'Creator economy', done: false,
+    detail: 'Coins, live gifts, and eSewa & Khalti payouts.', pct: 30,
+  },
+  {
+    phase: 'Phase 04', name: 'Launch', done: false,
+    detail: 'Nepal-wide release — you’re on the list.', pct: 5,
+  },
+];
+
+function PhaseCard({
+  phase, name, detail, pct, done, i,
+}: {
+  phase: string; name: string; detail: string; pct: number; done: boolean; i: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
-      { threshold: 0.3 }
+    const o = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) setVisible(true); },
+      { threshold: 0.25 },
     );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
+    if (ref.current) o.observe(ref.current);
+    return () => o.disconnect();
   }, []);
 
   return (
-    <TiltCard>
-      <div
-        ref={ref}
-        className="stat-card rounded-2xl px-6 py-6 sm:py-7 text-center flex flex-col items-center gap-2 card-hover"
-        style={{
-          transition: `all 0.6s ease ${delay}ms`,
-          opacity: visible ? 1 : 0,
-          transform: visible ? 'translateY(0) scale(1)' : 'translateY(30px) scale(0.95)',
-        }}
-      >
-        <div className="text-red-400 mb-1">{icon}</div>
-        <div
-          className="text-4xl sm:text-5xl font-black gradient-text tabular-nums"
-          style={{ fontFamily: 'Space Grotesk, sans-serif' }}
-        >
-          {value}
-        </div>
-        <div className="text-white/50 text-xs tracking-widest uppercase font-semibold">{label}</div>
+    <div
+      ref={ref}
+      className="milestone"
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'none' : 'translateY(24px)',
+        transition: `opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1) ${i * 90}ms, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) ${i * 90}ms, border-color 0.4s ease`,
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <span className="phase">{phase}</span>
+        <span className="font-mono text-[0.66rem] tabular-nums text-mute">{pct}%</span>
       </div>
-    </TiltCard>
+      <p className="pname">{name}</p>
+      <p className="pdetail">{detail}</p>
+      <div className="progress-track">
+        <div
+          className={`progress-fill ${done ? 'done' : ''}`}
+          style={{ width: visible ? `${pct}%` : '0%' }}
+        />
+      </div>
+    </div>
   );
 }
 
-// ─── SEO Hidden Content ──────────────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════════
+   TIMELINE
+═══════════════════════════════════════════════════════════════════ */
+const STORY = [
+  {
+    year: 'Early 2025', active: false,
+    title: 'The idea',
+    desc: 'A 17-year-old from Nepal decides his country deserves its own short-video platform — and starts building it.',
+  },
+  {
+    year: 'Mid 2025', active: false,
+    title: 'First lines of code',
+    desc: 'Backend takes shape: Flask API, Supabase database, Cloudflare R2 storage.',
+  },
+  {
+    year: 'Late 2025', active: false,
+    title: 'App & admin built',
+    desc: 'Flutter mobile app, an 18-page admin panel, and an HLS video pipeline all come together.',
+  },
+  {
+    year: '2026', active: true,
+    title: 'Active development',
+    desc: '170+ API endpoints shipped, 30+ AI agents helping build. Every day brings Suru closer to launch.',
+  },
+];
+
+function TimelineItem({
+  year, title, desc, active, last,
+}: {
+  year: string; title: string; desc: string; active: boolean; last: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const o = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) setVisible(true); },
+      { threshold: 0.2 },
+    );
+    if (ref.current) o.observe(ref.current);
+    return () => o.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="flex gap-5"
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'none' : 'translateX(-18px)',
+        transition: 'opacity 0.7s ease, transform 0.7s ease',
+      }}
+    >
+      <div className="flex flex-col items-center">
+        <span className={`timeline-dot ${active ? 'pulse-ring' : ''}`} />
+        {!last && <span className="timeline-line" />}
+      </div>
+      <div className="pb-9 pt-0.5">
+        <p className="font-mono text-[0.66rem] uppercase tracking-[0.24em] text-crimson">{year}</p>
+        <h4 className="mt-1.5 font-display text-lg font-medium text-cream">{title}</h4>
+        <p className="mt-1.5 max-w-md text-sm leading-relaxed text-stone">{desc}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SEO HIDDEN CONTENT
+═══════════════════════════════════════════════════════════════════ */
 function SeoContent() {
   return (
     <div aria-hidden="true" style={{
       position: 'absolute', width: '1px', height: '1px',
-      overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap'
+      overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap',
     }}>
       <h1>Aaba Ramilo Suru — ARS Nepal by Roshan Shrestha</h1>
       <p>
@@ -476,86 +450,13 @@ function SeoContent() {
   );
 }
 
-// ─── Section Header ──────────────────────────────────────────────────────────
-function SectionHeader({
-  badge, badgeIcon, title, subtitle,
-}: {
-  badge: string; badgeIcon?: React.ReactNode; title: React.ReactNode;
-  subtitle?: string;
-}) {
-  return (
-    <div className="text-center mb-12 sm:mb-16">
-      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-600/10 border border-red-600/20 text-red-400 text-sm font-medium mb-4 reveal">
-        {badgeIcon}
-        {badge}
-      </div>
-      <h2
-        className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight reveal"
-        style={{ fontFamily: 'Space Grotesk, sans-serif', transitionDelay: '100ms' }}
-      >
-        {title}
-      </h2>
-      {subtitle && (
-        <p className="text-white/50 mt-4 text-base max-w-xl mx-auto reveal" style={{ transitionDelay: '200ms' }}>
-          {subtitle}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// ─── Timeline Item ───────────────────────────────────────────────────────────
-function TimelineItem({
-  year, title, description, active = false,
-}: {
-  year: string; title: string; description: string; active?: boolean;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
-      { threshold: 0.2 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div
-      ref={ref}
-      className="flex gap-5 items-start"
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateX(0)' : 'translateX(-20px)',
-        transition: `all 0.6s ease`,
-      }}
-    >
-      <div className="flex flex-col items-center">
-        <div className={`timeline-dot ${active ? 'shadow-lg' : ''}`} />
-        <div className="timeline-line flex-1 min-h-[40px]" />
-      </div>
-      <div className="pb-8 pt-1">
-        <span className={`text-xs font-bold tracking-widest ${active ? 'text-red-400' : 'text-white/30'}`}>
-          {year}
-        </span>
-        <h4 className="text-white font-bold text-base mt-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-          {title}
-        </h4>
-        <p className="text-white/40 text-sm mt-1">{description}</p>
-      </div>
-    </div>
-  );
-}
-
-// ─── Main Home Page ──────────────────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════════════════
+   MAIN PAGE
+═══════════════════════════════════════════════════════════════════ */
 export default function Home() {
-  const [typedText, setTypedText] = useState('');
-  const fullText = 'Aaba Ramilo Suru';
-  const parallax = useMouseParallax(30);
+  const [submitted, setSubmitted] = useState(false);
 
-  // Update page metadata for SEO
+  // Page metadata + JSON-LD (kept from previous build)
   useEffect(() => {
     document.title = 'Aaba Ramilo Suru | ARS Nepal — aabaramilosuru | Nepal\'s Own Short Video Platform by Roshan Shrestha';
     const desc = document.querySelector('meta[name="description"]');
@@ -569,9 +470,6 @@ export default function Home() {
     const canonical = document.querySelector('link[rel="canonical"]');
     if (canonical) canonical.setAttribute('href', 'https://ars.qzz.io/');
 
-    // ── Dynamic JSON-LD Schemas (page-specific only; global schemas in index.html) ──
-
-    // WebPage
     injectJsonLd('seo-webpage', {
       '@context': 'https://schema.org',
       '@type': 'WebPage',
@@ -580,579 +478,336 @@ export default function Home() {
       url: 'https://ars.qzz.io/',
       inLanguage: 'en',
       isPartOf: { '@type': 'WebSite', name: 'Aaba Ramilo Suru', url: 'https://ars.qzz.io' },
-      about: { '@type': 'Organization', name: 'Aaba Ramilo Suru', url: 'https://ars.qzz.io' }
+      about: { '@type': 'Organization', name: 'Aaba Ramilo Suru', url: 'https://ars.qzz.io' },
     });
 
     return () => removeJsonLd();
   }, []);
 
-  // Typing effect
-  useEffect(() => {
-    let i = 0;
-    const timer = setInterval(() => {
-      if (i <= fullText.length) {
-        setTypedText(fullText.slice(0, i));
-        i++;
-      } else {
-        clearInterval(timer);
-      }
-    }, 70);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Scroll reveal observer
+  // Scroll reveal
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        entries.forEach(entry => {
+        entries.forEach((entry) => {
           if (entry.isIntersecting) entry.target.classList.add('visible');
         });
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
-    document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach(el => {
+    document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach((el) => {
       observer.observe(el);
     });
     return () => observer.disconnect();
   }, []);
 
-  const features = [
-    {
-      icon: <Play className="w-5 h-5 text-white" />,
-      title: 'Short Videos',
-      description: 'Create and share 15s to 60s videos with filters, effects, and music. Express yourself the Nepali way.',
-      gradient: 'bg-gradient-to-br from-red-600 to-red-500',
-    },
-    {
-      icon: <RadioIcon className="w-5 h-5 text-white" />,
-      title: 'Live Streaming',
-      description: 'Go live and connect with your audience in real-time. Receive gifts and build your Nepali community.',
-      gradient: 'bg-gradient-to-br from-orange-500 to-yellow-500',
-    },
-    {
-      icon: <DollarSign className="w-5 h-5 text-white" />,
-      title: 'Earn Rewards',
-      description: 'Creators earn coins from gifts, which can be converted to real money. Your content has real value.',
-      gradient: 'bg-gradient-to-br from-yellow-500 to-amber-500',
-    },
-    {
-      icon: <Music className="w-5 h-5 text-white" />,
-      title: 'Nepali Sounds',
-      description: 'A growing library of Nepali music and trending sounds. Create content that resonates with Nepal.',
-      gradient: 'bg-gradient-to-br from-purple-600 to-pink-500',
-    },
-    {
-      icon: <Shield className="w-5 h-5 text-white" />,
-      title: 'Safe & Secure',
-      description: 'Content moderation, reporting system, and privacy controls to keep the Nepali community safe.',
-      gradient: 'bg-gradient-to-br from-blue-600 to-cyan-500',
-    },
-    {
-      icon: <Zap className="w-5 h-5 text-white" />,
-      title: 'Fast & Light',
-      description: 'Optimized for Nepal\'s network conditions. Works smoothly even on slower internet connections.',
-      gradient: 'bg-gradient-to-br from-green-500 to-emerald-500',
-    },
-  ];
-
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
-      {/* Cursor sparkle effects */}
-      <CursorSparkles />
-
+    <div className="relative min-h-screen bg-ink">
       <SeoContent />
 
-      {/* ═══ HERO SECTION ═══ */}
-      <section
-        className="relative min-h-screen flex flex-col items-center justify-center px-4 pt-24 pb-12 overflow-hidden"
-        aria-label="Hero section"
-      >
-        <HeroBackground />
+      {/* ═══ HERO ═══ */}
+      <section className="relative overflow-hidden" aria-label="ARS Nepal — hero">
+        <HeroBackdrop />
 
-        <div className="relative z-10 max-w-5xl mx-auto text-center space-y-6" ref={parallax.ref}>
-          {/* Nepal badge */}
-          <div
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white/70 mb-4 flag-pulse"
-            style={{ transform: `translate(${parallax.offset.x * 0.5}px, ${parallax.offset.y * 0.5}px)` }}
-          >
-            <span className="text-lg">🇳🇵</span>
-            <span className="tracking-wider font-semibold">Nepal's Own Platform</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse ml-1" />
-          </div>
-
-          {/* Logo with rotating orbital rings */}
-          <div
-            className="flex justify-center mb-2"
-            style={{ transform: `translate(${parallax.offset.x * -0.3}px, ${parallax.offset.y * -0.3}px)` }}
-          >
-            <div className="relative float-slow">
-              {/* Orbital decoration rings */}
-              <div className="absolute inset-[-40px] orbital-ring" style={{ width: 'calc(100% + 80px)', height: 'calc(100% + 80px)' }} />
-              <div className="absolute inset-[-70px] orbital-ring" style={{ width: 'calc(100% + 140px)', height: 'calc(100% + 140px)' }} />
-              <div className="absolute inset-[-100px] orbital-ring" style={{ width: 'calc(100% + 200px)', height: 'calc(100% + 200px)' }} />
-
-              <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-3xl flex items-center justify-center hero-glow rounded-3xl">
-                <img src="/splash.png" alt="ARS Logo" className="w-28 h-28 sm:w-36 sm:h-36 object-contain drop-shadow-2xl" />
+        <div className="relative z-10 mx-auto max-w-7xl px-5 pt-32 pb-16 sm:px-8 sm:pb-20 lg:pt-36">
+          <div className="grid items-center gap-16 lg:grid-cols-[1.04fr_0.96fr] lg:gap-8">
+            {/* Left — copy */}
+            <div>
+              <div className="reveal inline-flex items-center gap-2.5 rounded-full border border-line bg-white/[0.03] py-1.5 pl-1.5 pr-4 text-[0.68rem] font-medium uppercase tracking-[0.24em] text-stone">
+                <img
+                  src="/images/roshan-avatar.jpg"
+                  alt="Roshan Shrestha"
+                  className="h-6 w-6 rounded-full object-cover ring-1 ring-crimson/50"
+                />
+                <span className="h-1.5 w-1.5 rounded-full bg-crimson animate-pulse" />
+                Made in Nepal · for Nepal
               </div>
-              <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full border-2 border-[#0a0a0f] animate-pulse" />
 
-              {/* Animated glowing particles around logo */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 sm:w-48 sm:h-48 rounded-full border border-red-500/10 spin-slow" style={{ animationDuration: '8s' }}>
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-red-400 shadow-lg shadow-red-500/50" />
-              </div>
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-52 h-52 sm:w-64 sm:h-64 rounded-full border border-orange-500/5 spin-slow" style={{ animationDuration: '12s', animationDirection: 'reverse' }}>
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-1.5 h-1.5 rounded-full bg-orange-400 shadow-lg shadow-orange-500/50" />
-              </div>
-            </div>
-          </div>
+              <h1 className="hero-title reveal mt-7 text-cream" style={{ transitionDelay: '80ms' }}>
+                Aaba Ramilo<br />
+                <span className="text-crimson">Suru</span>
+              </h1>
 
-          {/* Brand name with typing effect */}
-          <div>
-            <h1
-              className="hero-title font-black text-white leading-tight"
-              style={{ fontFamily: 'Space Grotesk, sans-serif' }}
-            >
-              <span className="gradient-text-fire">{typedText}</span>
-              <span className="cursor text-red-400 font-thin">|</span>
-            </h1>
-          </div>
-
-          {/* Tagline */}
-          <p
-            className="text-base sm:text-lg md:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed font-light"
-            style={{ transform: `translate(${parallax.offset.x * 0.2}px, ${parallax.offset.y * 0.2}px)` }}
-          >
-            Nepal's own short-form video social media platform — built by{' '}
-            <span className="text-white font-semibold">Roshan Shrestha</span>, a Nepali student, for Nepali creators.
-            <span className="text-red-400 font-semibold"> Express yourself, go viral, earn rewards.</span>
-          </p>
-
-          {/* Action words with stagger animation */}
-          <div className="flex flex-wrap justify-center gap-2 text-lg sm:text-xl font-bold">
-            {['Create.', 'Share.', 'Inspire Nepal.'].map((word, i) => (
-              <span
-                key={word}
-                className={i === 2 ? 'gradient-text-fire' : 'text-white/90'}
-                style={{ fontFamily: 'Space Grotesk, sans-serif', animationDelay: `${i * 0.15}s` }}
-              >
-                {word}
-              </span>
-            ))}
-          </div>
-
-          {/* Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <a
-              href="#join"
-              className="btn-primary px-8 py-4 rounded-2xl text-base font-bold text-white flex items-center gap-2 shadow-2xl group"
-            >
-              <span className="flex items-center gap-2">
-                🚀 Join Waitlist
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </span>
-            </a>
-            <Link
-              to="/products"
-              className="btn-secondary px-8 py-4 rounded-2xl text-base font-bold text-white flex items-center gap-2 group"
-            >
-              <span>Explore Products</span>
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-
-          {/* Scroll indicator */}
-          <div className="pt-8 flex flex-col items-center gap-2 text-white/20">
-            <span className="text-xs tracking-[0.2em] uppercase font-medium">Scroll to explore</span>
-            <div className="w-5 h-8 border border-white/20 rounded-full flex items-start justify-center p-1">
-              <div className="w-1 h-2.5 bg-gradient-to-b from-red-400 to-orange-400 rounded-full scroll-bounce" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ STATS SECTION ═══ */}
-      <section className="relative py-16 sm:py-20 px-4">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f] via-black/40 to-[#0a0a0f]" />
-        <div className="max-w-5xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <TiltCard>
-              <div className="stat-card rounded-2xl p-6 text-center card-hover h-full">
-                <div className="flex items-center justify-center mb-2">
-                  <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
-                </div>
-                <DaysCounter showLabel={true} />
-              </div>
-            </TiltCard>
-            <StatCard
-              value="∞"
-              label="Possibilities"
-              icon={<Sparkles className="w-5 h-5" />}
-              delay={100}
-            />
-            <StatCard
-              value="1"
-              label="Developer"
-              icon={<Star className="w-5 h-5" />}
-              delay={200}
-            />
-            <StatCard
-              value="🇳🇵"
-              label="Made in Nepal"
-              icon={<Heart className="w-5 h-5" />}
-              delay={300}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ DIVIDER ═══ */}
-      <div className="section-divider mx-8 sm:mx-16" />
-
-      {/* ═══ FEATURES SECTION ═══ */}
-      <section id="features" className="relative py-20 sm:py-28 px-4">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-950/5 to-transparent" />
-        <div className="max-w-6xl mx-auto relative z-10">
-          <SectionHeader
-            badge="Platform Features"
-            badgeIcon={<Zap className="w-4 h-4" />}
-            title={<>Everything Nepal <span className="gradient-text">Needs</span></>}
-            subtitle="ARS — Aaba Ramilo Suru — is designed from scratch with Nepali creators in mind. Every feature built to serve the Nepali community."
-          />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-            {features.map((f, i) => (
-              <FeatureCard key={f.title} {...f} delay={i * 100} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ APP PREVIEW SECTION ═══ */}
-      <section className="relative py-20 sm:py-28 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-red-950/20 via-transparent to-orange-950/20" />
-        <div className="max-w-6xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left: text */}
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-sm font-medium reveal">
-                <TrendingUp className="w-4 h-4" />
-                Coming Soon
-              </div>
-              <h2
-                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight reveal"
-                style={{ fontFamily: 'Space Grotesk, sans-serif' }}
-              >
-                The Next-Gen<br />
-                <span className="gradient-text-fire">Nepali App</span>
-              </h2>
-              <p className="text-white/50 text-base leading-relaxed reveal" style={{ transitionDelay: '150ms' }}>
-                ARS is being built from the ground up — optimized for mobile-first Nepal.
-                A platform that truly understands the Nepali creator, their language, their culture, their dreams.
+              <p className="reveal mt-4 text-lg text-stone" style={{ transitionDelay: '140ms' }}>
+                <span className="font-display text-cream">“Let’s start now.”</span>{' '}
+                <span className="font-body text-mute">— the meaning of Aaba Ramilo Suru</span>
               </p>
 
-              <div className="space-y-3 reveal" style={{ transitionDelay: '250ms' }}>
+              <p className="reveal mt-6 max-w-xl text-[1.02rem] leading-relaxed text-stone" style={{ transitionDelay: '200ms' }}>
+                Nepal’s own short-video platform — built from scratch by a{' '}
+                <span className="font-semibold text-cream">17-year-old Nepali developer</span>,
+                for the country that raised him. No copy-paste, no outside funding. Just code and
+                conviction.
+              </p>
+
+              <div className="reveal mt-9 flex flex-wrap items-center gap-3" style={{ transitionDelay: '260ms' }}>
+                <a href="#join" className="btn btn-primary shine-on-hover px-7 py-3.5 text-[0.95rem] group">
+                  Join the waitlist
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </a>
+                <Link to="/products" className="btn btn-secondary px-7 py-3.5 text-[0.95rem] group">
+                  See what’s being built
+                  <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                </Link>
+              </div>
+
+              <div
+                className="reveal mt-10 flex flex-wrap items-center gap-x-9 gap-y-4 border-t border-line-soft pt-6"
+                style={{ transitionDelay: '320ms' }}
+              >
                 {[
-                  { icon: '🎬', text: 'Short videos 15s – 60s with Nepali filters' },
-                  { icon: '📡', text: 'Live streaming with gift economy' },
-                  { icon: '💰', text: 'Monetization for Nepali creators' },
-                  { icon: '🇳🇵', text: 'Fully localized for Nepal' },
-                ].map((item) => (
-                  <div key={item.text} className="flex items-center gap-3 text-white/70 group hover:translate-x-1 transition-transform">
-                    <span className="text-lg w-8">{item.icon}</span>
-                    <span className="text-sm">{item.text}</span>
+                  { k: 'One developer', d: 'builder · founder' },
+                  { k: '170+ APIs', d: 'endpoints shipped' },
+                  { k: '0 funding', d: 'NPR outside' },
+                  { k: 'In public', d: 'day by day' },
+                ].map((m) => (
+                  <div key={m.k}>
+                    <p className="font-display text-lg font-medium text-cream">{m.k}</p>
+                    <p className="mt-0.5 font-mono text-[0.6rem] uppercase tracking-[0.18em] text-mute">{m.d}</p>
                   </div>
                 ))}
               </div>
-
-              <Link
-                to="/products"
-                className="inline-flex items-center gap-2 btn-primary px-7 py-3.5 rounded-2xl text-sm font-bold text-white group reveal"
-                style={{ transitionDelay: '300ms' }}
-              >
-                <span>Explore All Products</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
             </div>
 
-            {/* Right: realistic phone mockup with image */}
-            <div className="flex justify-center reveal-right">
-              <div className="relative float-slow">
-                {/* Phone frame */}
-                <div
-                  className="w-64 sm:w-80 rounded-[3rem] overflow-hidden border-4 border-white/10 shadow-2xl transition-all duration-500 hover:border-red-500/30 relative"
-                  style={{
-                    boxShadow: '0 0 60px rgba(220,38,38,0.3), 0 40px 80px rgba(0,0,0,0.6)',
-                  }}
-                >
-                  {/* Phone screen */}
-                  <div className="aspect-[9/19] bg-gradient-to-b from-[#0a0a1a] to-[#000] flex items-center justify-center p-4 relative overflow-hidden">
-                    {/* App screen content */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-red-950/30 to-black/80" />
-
-                    {/* App UI simulation */}
-                    <div className="relative z-10 w-full h-full flex flex-col">
-                      {/* Status bar */}
-                      <div className="flex justify-between items-center px-2 pt-2 pb-4">
-                        <span className="text-white/40 text-[10px]">9:41</span>
-                        <div className="flex gap-1">
-                          <div className="w-3 h-2 rounded-[1px] border border-white/30" />
-                          <span className="text-white/40 text-[10px]">📶</span>
-                          <span className="text-white/40 text-[10px]">🔋</span>
-                        </div>
-                      </div>
-
-                      {/* Content area */}
-                      <div className="flex-1 flex flex-col items-center justify-center space-y-4">
-                        {/* Real App Logo */}
-                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl shadow-red-600/30 float-fast">
-                          <img src="/splash.png" alt="ARS Nepal Logo" className="w-14 h-14 object-contain" />
-                        </div>
-                        <p className="text-white/50 text-xs font-semibold tracking-widest uppercase">Aaba Ramilo Suru</p>
-
-                        <div className="flex gap-1.5">
-                          {[0, 1, 2].map(i => (
-                            <div
-                              key={i}
-                              className={`w-1.5 h-1.5 rounded-full ${i === 0 ? 'bg-red-400 animate-pulse' : 'bg-white/20'}`}
-                            />
-                          ))}
-                        </div>
-
-                        {/* Bottom tag */}
-                        <div className="absolute bottom-8 left-0 right-0 text-center">
-                          <p className="text-white/60 text-xs font-semibold">🎬 Nepal's Own</p>
-                          <p className="text-white/20 text-[9px] mt-0.5">short video platform</p>
-                        </div>
-
-                        {/* Horizontal content thumbnails */}
-                        <div className="absolute bottom-16 left-4 right-4 flex gap-2">
-                          {[0, 1, 2].map(i => (
-                            <div key={i} className="flex-1 h-10 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center">
-                              <span className="text-white/20 text-[8px]">▶</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Floating badges */}
-                <div className="absolute -top-5 -right-5 bg-gradient-to-r from-red-600 to-orange-500 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg float-delayed shadow-red-600/30">
-                  🇳🇵 Nepal's Own
-                </div>
-                <div className="absolute -bottom-4 -left-5 bg-[#1a1a2e] border border-white/10 text-white text-xs font-medium px-4 py-2 rounded-full shadow-lg float shadow-black/50 backdrop-blur-sm">
-                  ⚡ Coming Soon
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ TIMELINE / ROADMAP ═══ */}
-      <section className="relative py-20 sm:py-28 px-4">
-        <div className="max-w-3xl mx-auto">
-          <SectionHeader
-            badge="Journey"
-            badgeIcon={<Globe className="w-4 h-4" />}
-            title={<>The <span className="gradient-text">Story</span> So Far</>}
-            subtitle="From idea to reality — the ARS Nepal journey"
-          />
-
-          <div className="ml-4 mt-10">
-            <TimelineItem
-              year="EARLY 2025"
-              title="💡 The Idea"
-              description="Roshan Shrestha, a 17-year-old student from Nepal, starts dreaming of building Nepal's own short-video platform."
-            />
-            <TimelineItem
-              year="MID 2025"
-              title="🔨 First Lines of Code"
-              description="Backend development begins. Flask API, Supabase database, Cloudflare R2 storage. The foundation of ARS is laid."
-            />
-            <TimelineItem
-              year="LATE 2025"
-              title="📱 Mobile & Admin Built"
-              description="Flutter mobile app takes shape. Admin panel with 18 pages built. Video pipeline with HLS streaming completed."
-            />
-            <TimelineItem
-              year="2026"
-              title="🚀 Active Development"
-              description="170+ API endpoints built. 30+ ECC agents helping development. Every day brings ARS closer to launch."
-              active={true}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ ABOUT DEVELOPER ═══ */}
-      <section id="about" className="relative py-20 sm:py-28 px-4">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-red-950/10 to-[#0a0a0f]" />
-        <div className="max-w-4xl mx-auto relative z-10">
-          <SectionHeader
-            badge="The Developer"
-            badgeIcon={<Users className="w-4 h-4" />}
-            title={<>Built by <span className="gradient-text">Roshan Shrestha</span></>}
-            subtitle="Founder of ARS Nepal — Aaba Ramilo Suru"
-          />
-
-          {/* Developer card */}
-          <TiltCard>
-            <div className="relative bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 rounded-3xl p-8 sm:p-10 overflow-hidden card-hover group">
-              {/* Background decoration */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-red-600/10 to-transparent rounded-full blur-2xl" />
-              <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-orange-500/10 to-transparent rounded-full blur-2xl" />
-              <div className="absolute -inset-1 bg-gradient-to-r from-red-600/0 via-red-600/0 to-orange-500/0 group-hover:from-red-600/5 group-hover:via-transparent group-hover:to-orange-500/5 blur-3xl transition-all duration-700" />
-
-              <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-8">
-                {/* Avatar */}
-                <div className="relative flex-shrink-0">
-                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden border-2 avatar-border shadow-xl pulse-ring">
-                    <div className="w-full h-full bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center">
-                      <span className="text-3xl font-black text-white">R</span>
-                    </div>
-                  </div>
-                  <div className="absolute -bottom-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full border-2 border-[#0a0a0f] shadow-lg">
-                    BUILDING
-                  </div>
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 text-center sm:text-left space-y-3">
-                  <div>
-                    <h3
-                      className="text-2xl sm:text-3xl font-black text-white"
-                      style={{ fontFamily: 'Space Grotesk, sans-serif' }}
-                    >
-                      Roshan Shrestha{' '}
-                      <span className="wave">👋</span>
-                    </h3>
-                    <p className="text-red-400 font-semibold text-sm mt-0.5">Developer & Founder @ ARS Nepal — Aaba Ramilo Suru</p>
-                  </div>
-
-                  <p className="text-white/60 text-sm sm:text-base leading-relaxed max-w-xl">
-                    A <span className="text-white font-semibold">17-year-old self-taught developer</span> from Nepal,
-                    building ARS (Aaba Ramilo Suru) — Nepal's own short-form video social media platform — from scratch.
-                    Roshan is passionate about creating technology that serves Nepali creators and brings
-                    the community together. Every line of code is written with the dream of giving Nepal its own
-                    platform to shine on the world stage.
-                  </p>
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap justify-center sm:justify-start gap-2 pt-1">
-                    {[
-                      { emoji: '🎓', text: '17 yrs' },
-                      { emoji: '📚', text: 'Class 9' },
-                      { emoji: '🇳🇵', text: 'Nepal' },
-                      { emoji: '💻', text: 'Self-taught' },
-                      { emoji: '🚀', text: 'Founder' },
-                    ].map((tag) => (
-                      <span
-                        key={tag.text}
-                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 text-xs font-medium hover:bg-red-600/10 hover:border-red-600/30 hover:text-red-400 transition-all duration-200"
-                      >
-                        {tag.emoji} {tag.text}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="flex flex-wrap justify-center sm:justify-start gap-4 pt-2">
-                    <div className="flex items-center gap-2 bg-red-600/10 border border-red-600/20 rounded-xl px-4 py-2 group">
-                      <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse group-hover:scale-125 transition-transform" />
-                      <span className="text-red-400 text-xs font-semibold">Actively building every day</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quote */}
-              <div className="relative z-10 mt-8 pt-6 border-t border-white/5">
-                <blockquote className="text-center text-white/40 text-sm italic">
-                  "I'm just a student from Nepal, but I believe Nepal deserves its own platform.
-                  <span className="text-red-400 not-italic font-semibold"> Aaba Ramilo Suru.</span>"
-                </blockquote>
-                <p className="text-center text-white/20 text-xs mt-2">— Roshan Shrestha, Developer</p>
-              </div>
-            </div>
-          </TiltCard>
-        </div>
-      </section>
-
-      {/* ═══ CTA SECTION ═══ */}
-      <section id="join" className="relative py-20 sm:py-28 px-4">
-        <div className="max-w-3xl mx-auto text-center space-y-8">
-          <div className="relative bg-gradient-to-br from-red-950/40 to-orange-950/20 border border-red-600/20 rounded-3xl p-10 sm:p-14 overflow-hidden group">
-            {/* Glow */}
-            <div className="absolute inset-0 bg-gradient-to-br from-red-600/5 to-orange-500/5" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-red-600/10 rounded-full blur-3xl group-hover:bg-red-600/15 transition-all duration-700" />
-            <div className="shimmer-bar" />
-
-            <div className="relative z-10 space-y-6">
-              <div className="text-5xl sm:text-6xl float-slow">🚀</div>
-              <h2
-                className="text-3xl sm:text-4xl md:text-5xl font-black text-white"
-                style={{ fontFamily: 'Space Grotesk, sans-serif' }}
-              >
-                Be First in{' '}
-                <span className="gradient-text-fire">Nepal</span>
-              </h2>
-              <p className="text-white/50 text-base max-w-lg mx-auto leading-relaxed">
-                ARS — Aaba Ramilo Suru — is under construction. Join the waitlist and be among
-                the first Nepali creators when we launch. Your creativity, your platform.
-                Built by Roshan Shrestha for Nepal.
-              </p>
-
-              {/* Email form */}
-              <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-                <input
-                  type="email"
-                  id="cta-email"
-                  name="email"
-                  placeholder="your@email.com"
-                  className="flex-1 px-5 py-3.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder-white/30 text-sm focus:outline-none focus:border-red-600/60 focus:bg-white/10 focus:ring-2 focus:ring-red-600/20 transition-all"
+            {/* Right — developer card + live feed */}
+            <div className="reveal-right flex flex-col items-center gap-6 lg:justify-self-end">
+              <div className="float-slow flex w-full max-w-[340px] items-center gap-4 rounded-2xl border border-line bg-gradient-to-r from-white/[0.05] to-white/[0.01] p-4 shadow-2xl backdrop-blur-sm">
+                <img
+                  src="/images/roshan-avatar.jpg"
+                  alt="Roshan Shrestha — developer of Aaba Ramilo Suru"
+                  className="h-16 w-16 shrink-0 rounded-xl object-cover ring-2 ring-crimson/40"
                 />
-                <button className="btn-primary px-6 py-3.5 rounded-xl text-sm font-bold text-white whitespace-nowrap shadow-xl">
-                  <span>Join Now 🇳🇵</span>
-                </button>
+                <div className="min-w-0">
+                  <p className="truncate font-display text-base font-medium text-cream">Roshan Shrestha</p>
+                  <p className="font-mono text-[0.6rem] uppercase tracking-[0.18em] text-crimson">Founder & developer</p>
+                  <p className="mt-1.5 text-xs text-stone">17 · self-taught · built from scratch</p>
+                </div>
+                <span className="ml-auto flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-ink px-3 py-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+                  <span className="font-mono text-[0.58rem] uppercase tracking-[0.16em] text-stone">Coding</span>
+                </span>
               </div>
-
-              <p className="text-white/20 text-xs">No spam. Only launch updates. Swear on Sagarmatha. 🏔️</p>
-
-              {/* Nepal flag accent */}
-              <div className="flex justify-center gap-1 text-2xl opacity-30 group-hover:opacity-60 transition-opacity duration-500">
-                🇳🇵❤️🇳🇵
-              </div>
+              <FeedPanel />
             </div>
           </div>
         </div>
       </section>
 
-      {/* ═══ FOOTER TAGLINE ═══ */}
-      <div className="text-center py-10 px-4 relative">
-        <div className="section-divider mx-8 sm:mx-16 mb-8" />
-        <p className="text-white/30 text-sm flex items-center justify-center gap-2">
-          <span className="gradient-text font-semibold">Aaba Ramilo Suru</span>
-          <span className="text-white/20">—</span>
-          ARS Nepal by Roshan Shrestha.
-          <span className="text-red-400/60">Create. Share. Inspire.</span>
+      {/* ═══ TICKER ═══ */}
+      <Ticker />
+
+      {/* ═══ BUILD SO FAR ═══ */}
+      <section className="relative px-5 py-16 sm:px-8 sm:py-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <div className="reveal">
+              <p className="section-eyebrow">Live build log</p>
+              <h2 className="section-title">The build, so far.</h2>
+            </div>
+            <Link to="/products" className="reveal link-arrow" style={{ transitionDelay: '100ms' }}>
+              Track every product <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div
+            className="reveal mt-12 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4"
+            style={{ transitionDelay: '120ms' }}
+          >
+            <div className="bg-ink p-7">
+              <div className="mb-5 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-crimson animate-pulse" />
+                <span className="font-mono text-[0.6rem] uppercase tracking-[0.22em] text-mute">Days building</span>
+              </div>
+              <DaysCounter showLabel={false} />
+            </div>
+
+            <div className="bg-ink p-7">
+              <p className="font-display text-5xl font-medium tabular-nums text-cream">1</p>
+              <p className="mt-2 font-mono text-[0.6rem] uppercase tracking-[0.18em] text-mute">developer · designer · founder</p>
+            </div>
+
+            <div className="bg-ink p-7">
+              <p className="font-display text-5xl font-medium tabular-nums text-cream">
+                170<span className="text-crimson">+</span>
+              </p>
+              <p className="mt-2 font-mono text-[0.6rem] uppercase tracking-[0.18em] text-mute">API endpoints shipped</p>
+            </div>
+
+            <div className="bg-ink p-7">
+              <p className="font-display text-5xl font-medium tabular-nums text-cream">0</p>
+              <p className="mt-2 font-mono text-[0.6rem] uppercase tracking-[0.18em] text-mute">NPR of outside funding</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ FEATURES ═══ */}
+      <section id="features" className="relative px-5 py-20 sm:px-8 sm:py-28">
+        <div className="mx-auto max-w-7xl">
+          <SectionHeader
+            badge="The platform"
+            title={<>What <span className="text-crimson">Suru</span> is</>}
+            subtitle="Six surfaces, one promise — a stage built for Nepali creators, in their language."
+          />
+          <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((f, i) => (
+              <FeatureCard key={f.tag} {...f} i={i} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ LAUNCH BOARD ═══ */}
+      <section className="relative px-5 py-20 sm:px-8 sm:py-28">
+        <div className="mx-auto max-w-7xl">
+          <SectionHeader
+            badge="On the way"
+            title={<>The launch <span className="text-crimson">board</span></>}
+            subtitle="Four phases, tracked in public. No smoke and mirrors — this is the honest state of the build."
+          />
+          <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {PHASES.map((p, i) => (
+              <PhaseCard key={p.name} {...p} i={i} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ STORY ═══ */}
+      <section className="relative px-5 py-20 sm:px-8 sm:py-28">
+        <div className="mx-auto max-w-2xl">
+          <SectionHeader
+            badge="The story"
+            title={<>From a room, <span className="text-crimson">to Nepal</span></>}
+            subtitle="Every platform starts somewhere. Here’s how Suru started."
+          />
+          <div className="mt-14 ml-1">
+            {STORY.map((s, i) => (
+              <TimelineItem key={s.year} {...s} last={i === STORY.length - 1} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ ABOUT ═══ */}
+      <section id="about" className="relative px-5 py-20 sm:px-8 sm:py-28">
+        <div className="mx-auto max-w-4xl">
+          <SectionHeader
+            badge="The founder"
+            title={<>One developer, <span className="text-crimson">one dream</span></>}
+            subtitle="Aaba Ramilo Suru isn’t built by a company. It’s built by one kid who refused to wait for someone else to do it."
+          />
+
+          <div className="reveal mt-12 overflow-hidden rounded-3xl border border-line bg-gradient-to-b from-white/[0.03] to-transparent p-8 sm:p-12">
+            <div className="flex flex-col items-center gap-8 sm:flex-row sm:items-start">
+              {/* avatar */}
+              <div className="relative shrink-0">
+                <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl border-2 avatar-border bg-gradient-to-br from-crimson to-marigold">
+                  <img
+                    src="/images/roshan-avatar.jpg"
+                    alt="Roshan Shrestha — founder & developer"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <span className="absolute -bottom-2 -right-2 rounded-full border border-line bg-ink px-2.5 py-1 font-mono text-[0.58rem] uppercase tracking-widest text-crimson">
+                  Building
+                </span>
+              </div>
+
+              {/* body */}
+              <div className="flex-1 text-center sm:text-left">
+                <h3 className="font-display text-2xl font-medium text-cream">Roshan Shrestha</h3>
+                <p className="mt-1 text-sm font-medium text-crimson">Founder & developer, Aaba Ramilo Suru</p>
+                <p className="mt-4 text-[0.95rem] leading-relaxed text-stone">
+                  Roshan is 17. He taught himself to code, then built an entire platform on his own —
+                  backend, mobile app, admin panel, website — without a team or a single rupee of
+                  funding. Suru is the proof that Nepal’s next platform doesn’t have to be imported.
+                </p>
+                <div className="mt-5 flex flex-wrap justify-center gap-2 sm:justify-start">
+                  {['Self-taught', 'Class 9', 'From Nepal', 'Solo founder', 'Built in public'].map((t) => (
+                    <span
+                      key={t}
+                      className="rounded-full border border-line bg-white/[0.03] px-3 py-1 text-xs text-stone"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <blockquote className="mt-10 border-t border-line-soft pt-7 text-center">
+              <p className="font-display text-lg leading-relaxed text-stone">
+                “I’m just a student from Nepal. But Nepal deserves its own platform —{' '}
+                <span className="text-crimson">so let’s start now.</span>”
+              </p>
+              <cite className="mt-3 block font-mono text-xs not-italic uppercase tracking-[0.2em] text-mute">
+                — Roshan Shrestha
+              </cite>
+            </blockquote>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ CTA ═══ */}
+      <section id="join" className="relative overflow-hidden px-5 py-24 sm:px-8 sm:py-32">
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: 'radial-gradient(60% 80% at 50% 120%, rgba(230, 57, 70, 0.16), transparent 60%)' }}
+        />
+        <div className="relative mx-auto max-w-2xl text-center">
+          <p className="section-eyebrow justify-center reveal">Be first</p>
+          <h2 className="section-title reveal mt-4 text-center" style={{ transitionDelay: '80ms' }}>
+            Be first when Nepal<br />goes <span className="text-crimson">live.</span>
+          </h2>
+          <p className="reveal mt-5 text-stone" style={{ transitionDelay: '160ms' }}>
+            Join the waitlist. Early creators get early access, a head start on the first feed —
+            and a name on the platform before anyone else.
+          </p>
+
+          {submitted ? (
+            <div
+              className="reveal mx-auto mt-9 max-w-md rounded-2xl border border-line bg-white/[0.03] px-6 py-5"
+              style={{ transitionDelay: '240ms' }}
+            >
+              <p className="font-display text-lg text-cream">You’re on the list. 🙏</p>
+              <p className="mt-1 text-sm text-stone">We’ll write the moment Suru goes live. Watch this space.</p>
+            </div>
+          ) : (
+            <form
+              className="reveal mx-auto mt-9 flex max-w-md flex-col gap-3 sm:flex-row"
+              style={{ transitionDelay: '240ms' }}
+              onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }}
+            >
+              <label htmlFor="cta-email" className="sr-only">Email address</label>
+              <input
+                id="cta-email"
+                type="email"
+                required
+                placeholder="your@email.com"
+                className="w-full flex-1 rounded-xl border border-line bg-white/[0.03] px-5 py-3.5 text-sm text-cream placeholder:text-mute focus:border-crimson focus:outline-none focus:ring-2 focus:ring-crimson/25"
+              />
+              <button type="submit" className="btn btn-primary shine-on-hover px-6 py-3.5 text-sm">
+                Join now <ArrowRight className="h-4 w-4" />
+              </button>
+            </form>
+          )}
+
+          <p
+            className="reveal mt-5 font-mono text-[0.6rem] uppercase tracking-[0.22em] text-mute"
+            style={{ transitionDelay: '300ms' }}
+          >
+            No spam — launch updates only. Sworn on Sagarmatha. 🏔️
+          </p>
+        </div>
+      </section>
+
+      {/* ═══ CLOSING MARK ═══ */}
+      <div className="border-t border-line-soft px-5 py-10 text-center">
+        <p className="font-mono text-[0.6rem] uppercase tracking-[0.28em] text-mute">
+          Aaba Ramilo Suru <span className="text-crimson">·</span> made in Nepal{' '}
+          <span className="text-crimson">·</span> for Nepal
         </p>
       </div>
-
-
     </div>
-  );
-}
-
-// ─── RadioIcon (custom SVG) ───────────────────────────────────────────────────
-function RadioIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9" />
-      <path d="M7.8 13.2c-2.3-2.3-2.3-6.1 0-8.5" />
-      <circle cx="12" cy="12" r="2" />
-      <path d="M16.2 13.2c2.3-2.3 2.3-6.1 0-8.5" />
-      <path d="M19.1 16.1c3.9-3.9 3.9-10.3 0-14.2" />
-    </svg>
   );
 }
