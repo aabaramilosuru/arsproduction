@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ArrowRight, ArrowUpRight, Coins, Gauge, Heart, MessageCircle, Music,
+  ArrowRight, ArrowUpRight, Coins, Gauge, Heart, Mail, MessageCircle, Music,
   Play, Radio, Share2, Shield,
 } from 'lucide-react';
 import DaysCounter from '../components/DaysCounter';
@@ -732,6 +732,14 @@ export default function Home() {
                     </span>
                   ))}
                 </div>
+                <a
+                  href="mailto:founder@ars.qzz.io"
+                  className="mt-6 inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-crimson/30 bg-crimson/[0.08] px-5 py-2.5 text-sm font-medium text-crimson transition-colors duration-200 hover:bg-crimson hover:text-white sm:justify-start"
+                >
+                  <Mail className="h-4 w-4" />
+                  Contact the founder
+                  <span className="font-mono text-[0.68rem] tracking-wide opacity-80">founder@ars.qzz.io</span>
+                </a>
               </div>
             </div>
 
